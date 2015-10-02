@@ -18,17 +18,20 @@ import java.sql.*;
 import java.net.InetAddress;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
+import java.io.PrintStream;
 //import javax.net.ssl.HttpsURLConnection;
 
 public class G3m1n1S3rv3r{
-  private final String strHOST     = "kronos"; //hostname
-  private final String strPort     = "3306";   // port
-  private final String strDB       = "test";
-  private final String strDBTable  = "temperatur";
-  private final String strDBUser   = "geragepi";
-  private final String strDBPass   = "garagepi";
+  static final String strHOST       = "kronos"; //hostname
+  static final String strMiddleWare = "sz/middleware.php/data/";
+  static final String strPort       = "3306";   // port
+  static final String strDB         = "test";
+  static final String strDBTable    = "temperatur";
+  static final String strDBUser     = "geragepi";
+  static final String strDBPass     = "garagepi";
 
-  private final String USER_AGENT  = "Mozilla/5.0";
+  private final String USER_AGENT   = "Mozilla/5.0";
 
   private static boolean bDebug= false;
 
@@ -58,58 +61,92 @@ public class G3m1n1S3rv3r{
     return bRet;
   }
 
-  private boolean sendGetAndPost(String url, String urlParameters, boolean bSendGet ) throws Exception {
+  public static boolean URLPost( String url, String urlParameters ) throws Exception {
+    G3m1n1S3rv3r http = new G3m1n1S3rv3r();
+    if(bDebug) System.out.println("\nSend URL POST request");
+    boolean bRet= http.sendURLGet(url, urlParameters );
+    return bRet;
+  }
+
+  private boolean sendURLGet(String url, String urlParameters ) {
     boolean bRet= false;
-    URL obj = new URL(url);
-    HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-
-    //add header
-    // optional default is GET
-    con.setRequestMethod( bSendGet ? "GET" : "POST");
-    con.setRequestProperty("User-Agent", USER_AGENT);
-    if( !bSendGet ) con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
-
-    int responseCode= 0;
-    if( bSendGet ) {
-      // HTTP GET request
-      responseCode = con.getResponseCode();
-      if(bDebug) System.out.println("\nSending 'GET' request to URL : " + url);
-      if(bDebug) System.out.println("Response Code : " + responseCode);
-    } else {
-      // HTTP Send post request
+    try {
+      System.out.println("\nConnecting to URL : " + url+urlParameters);
+      URL obj = new URL(url+urlParameters);
+      URLConnection con = obj.openConnection();
       con.setDoOutput(true);
-      DataOutputStream wr = new DataOutputStream(con.getOutputStream());
-      wr.writeBytes(urlParameters);
-      wr.flush(); wr.close();
-
-      responseCode = con.getResponseCode();
-      if(bDebug) System.out.println("\nSending 'POST' request to URL : " + url);
-      if(bDebug) System.out.println("Post parameters : " + urlParameters);
-      if(bDebug) System.out.println("Response Code : " + responseCode);
-
-    }
-    if(responseCode > 0 && responseCode == 200 ) {
-      BufferedReader in = new BufferedReader( new InputStreamReader(con.getInputStream()));
-      String inputLine; StringBuffer response = new StringBuffer();
-      while ((inputLine = in.readLine()) != null) { response.append(inputLine); }
-      in.close();
-      if(bDebug) System.out.println(response.toString());
+      PrintStream ps = new PrintStream(con.getOutputStream());
+      con.getInputStream();
+      String line;
+      BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream()));
+      while ((line = reader.readLine()) != null) {
+        System.out.println(line);
+      }
+      reader.close();
+      ps.close();
+    } catch (Exception e) {
+        e.printStackTrace();
     }
     return bRet;
   }
 
+  private boolean sendGetAndPost(String url, String urlParameters, boolean bSendGet ) throws Exception {
+     boolean bRet= false;
+     URL obj = new URL(url);
+     HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+     //add header
+     // optional default is GET
+     con.setRequestMethod( bSendGet ? "GET" : "POST");
+     con.setRequestProperty("User-Agent", USER_AGENT);
+     if( !bSendGet ) con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
+
+     int responseCode= 0;
+     if( bSendGet ) {
+       // HTTP GET request
+       responseCode = con.getResponseCode();
+       if(bDebug) System.out.println("\nSending 'GET' request to URL : " + url);
+       if(bDebug) System.out.println("Response Code : " + responseCode);
+     } else {
+       // HTTP Send post request
+       con.setDoOutput(true);
+       DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+       wr.writeBytes(urlParameters);
+       wr.flush(); wr.close();
+
+       responseCode = con.getResponseCode();
+       if(bDebug) System.out.println("\nSending 'POST' request to URL : " + url);
+       if(bDebug) System.out.println("Post parameters : " + urlParameters);
+       if(bDebug) System.out.println("Response Code : " + responseCode);
+
+     }
+     if(responseCode > 0 && responseCode == 200 ) {
+       BufferedReader in = new BufferedReader( new InputStreamReader(con.getInputStream()));
+       String inputLine; StringBuffer response = new StringBuffer();
+       while ((inputLine = in.readLine()) != null) { response.append(inputLine); }
+       in.close();
+       if(bDebug) System.out.println(response.toString());
+     }
+     return bRet;
+   }
+
   public static boolean SendTemp( long lTime, String strDescription, String str1WireID, String strUUID, String strType, double dValue, boolean bDebugIn ) throws Exception {
-    String strHost= GetIP(strHOST);
-    String strMiddleWarePath= "sz/middleware.php/data/";
-    String strSendUUID=""; strSendUUID= strSendUUID.format( "%s.json?",strUUID );
     bDebug= bDebugIn;
+    String strHost= GetIP(strHOST);
+    String strMiddleWarePath= strMiddleWare;
+    String strSendUUID=""; strSendUUID= strSendUUID.format( "%s.json?",strUUID );
+
     String url=""; // url="http://host/sz/middleware.php/data/c3407300-9d4b-11e3-8eb8-99224c3b70e8.json?";
-    String urlParameters="";
+    String urlParameters=""; // ts=%d&value=23
 
     url= url.format("http://%s/%s%s", strHost, strMiddleWarePath, strSendUUID );
-    urlParameters= urlParameters.format("timestamp=%d&value=", lTime );
 
-    boolean bRet= httpPost(url, urlParameters+dValue);
+    urlParameters= urlParameters.format("value=")+dValue;
+    //urlParameters= urlParameters.format("ts=%d&value=", lTime )+dValue;
+
+    boolean bRet= URLPost(url, urlParameters);
+    //boolean bRet= httpPost(url, urlParameters);
+
     return bRet;
   }
 

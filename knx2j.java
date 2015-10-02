@@ -13,6 +13,8 @@ import java.io.*;
 import java.util.*;
 import java.lang.*;
 import javax.xml.bind.DatatypeConverter;
+import java.net.URL;
+import java.net.URLConnection;
 import G3m1n1S3rv3r.*;
 
 //import org.json.simple.JSONArray;
@@ -202,13 +204,14 @@ public class knx2j
           String strExec="";
           String strHex="";
           String strDisplayUnit=" ??";
+          boolean bUnitIsThermal=true;
 
           switch (strType.toLowerCase()) {
             case "thermal":  strDisplayUnit=" °C"; break;
-            case "humidity": strDisplayUnit=" %%"; break;
+            case "humidity": strDisplayUnit=" %%"; bUnitIsThermal=false; break;
           }
 
-          if(bDebug) System.out.println("Entering case: thermal");
+          if(bDebug) if(bUnitIsThermal) System.out.println("Entering sensor case: thermal"); else System.out.println("Entering sensor case: humidity");
           strExec= strExec.format("%s ip:%s:%s %s",strGRPResponseBIN, strKNX_IP, strKNX_PORT, strID);// | grep : | cut -d':' -f2",strID );
           strHex= ReadStream(strExec);
           if( strHex.length() >1 &&
@@ -223,13 +226,13 @@ public class knx2j
             String strRxData=""; strRxData= strRxData.format("%d", Eis52Value(Hex2Dec(strHex, 4)));
             double dRxData = (double)strToInt(strRxData) / 100;
 
-            boolean bSendHttp= gCL.SendTemp( unixTime,strDescription, strID, strUUID, strType, dRxData, bDebug );
+            boolean bSendHttp= gCL.SendTemp( unixTime, strDescription, strID, strUUID, strType, dRxData, bDebug );
             if(bDebug)
             {
               String strPrintValue=""; strPrintValue= strPrintValue.format("Time:%d ID: %s Description: %s Value: "+dRxData+strDisplayUnit,unixTime,strID,strDescription);
               System.out.println(strPrintValue);
               System.out.println("");
-              System.out.println("i: "+i);
+              System.out.println("counter i: "+i);
               System.out.println("iReTrySensor: "+iReTrySensor);
               System.out.println("bThreadSleep: "+bThreadSleep);
             }

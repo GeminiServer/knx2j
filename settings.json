@@ -1,8 +1,0 @@
-{
-  "id":        1, 
-  "firstname": "dummy", 
-  "languages": [ { "lang": "en", "test1": "test1value" },
-               {   "lang": "de", "test2": "test2value" } ],
-  "connection": { "site": "localhost",
-                  "name": "test connection" }
-}

@@ -1,0 +1,102 @@
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:       knx2j
+# Required-Start: $network $remote_fs
+# Required-Stop:  $remote_fs
+# Default-Start:  2 3 4 5
+# Default-Stop:   0 1 6
+# Description:    Read KNX group temp and hum and send it to vzlogger middleware
+### END INIT INFO
+
+app="knx2j"
+pidfile="/run/knx2j/knx2j.pid"
+logfile="/var/log/knx2j.log"
+user="root"
+
+# Make sure only root can run our script
+if [ "$(id -u)" != "0" ]
+then
+    echo "This script must be run as root" 1>&2
+    exit 4
+fi
+
+check_running() {
+    if [ -f "$pidfile" ]
+    then
+        if ! ps -p $(cat $pidfile) > /dev/null
+        then
+            echo "Removing stale PID file..."
+            rm "$pidfile"
+        fi
+    fi
+}
+
+_run() {
+    mkdir -p /run/knx2j
+    chown "$user":"$user" /run/lancom
+    #su "$user" -c 'mkdir -p $HOME/.knx2j/'
+    su "$user" -c 'cd /opt/knx2j; java knx2j &> /var/log/knx2j.log & echo $! > '"$pidfile"
+}
+
+_status() {
+    if [ -f "$pidfile" ]
+    then
+        echo "${app} running"
+        exit 0
+    else
+        echo "${app} not running"
+        exit 3
+    fi
+}
+
+_start() {
+    if [ -f "$pidfile" ]
+    then
+        echo "${app} already running"
+        exit 1
+    fi
+
+    echo "Starting ${app}..."
+    _run
+}
+
+_stop() {
+    if [ -f "$pidfile" ]
+    then
+        echo "Stopping ${app}..."
+        kill -TERM $(cat $pidfile)
+        while ps -p $(cat $pidfile) > /dev/null
+        do
+            sleep 1
+        done
+
+        rm "$pidfile"
+    fi
+}
+
+case "$1" in
+    start)
+        check_running
+        _start
+        ;;
+    stop)
+        check_running
+        _stop
+        ;;
+    restart)
+        check_running
+        _stop
+        _start
+        ;;
+    status)
+        check_running
+        _status
+        ;;
+    force-reload)
+        echo "Not implemented yet!"
+        ;;
+    *)
+        echo "Usage: knx2j [start|stop|restart|status]"
+        exit 1
+        ;;
+esac

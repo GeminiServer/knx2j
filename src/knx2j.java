@@ -7,7 +7,7 @@
 //
 //  Name: knx2j
 //  Description:
-//  Version: 0.0.2
+//  Version: 0.0.3
 //
 //  Author: Erkan Colak - 01.02.2014 / 09.05.2015 / 15.12.2016
 //
@@ -22,9 +22,9 @@ import G3m1n1S3rv3r.*;
 
 public class knx2j
 {
-  private static int iSleepTime       = 10;    // default 30 minutes
-  private static boolean bDebug       = false;  // default false
-  private static boolean bClassDebug  = false; // default false
+  private static int iSleepTime       = 10;    // in minutes. Default 30 minutes
+  private static boolean bDebug       = true;  // default false
+  private static boolean bClassDebug  = true;  // default false
 
   // Middleware/G3m1n1S3v3r class settings
   private static String strHOST       = "kronos"; //hostname
@@ -150,29 +150,23 @@ public class knx2j
       String thisLine;
       List<String> ListCMD= new ArrayList<String>();
       Runtime r= Runtime.getRuntime(); Process p= r.exec(cmd);
-      //if(bDebug) System.out.println(cmd);
-      try{ // open input stream for reading
-         BufferedReader br= new BufferedReader(new InputStreamReader( p.getInputStream()));
-         while( (thisLine = br.readLine()) != null) {
-            ListCMD.add(thisLine);
-          //if(bDebug) System.out.println(thisLine);
-        }
-      } catch(Exception e)  { e.printStackTrace(); }
 
-      if(bDebug) System.out.println("   Returned command size: "+ ListCMD.size());
-      for( int i= ListCMD.size()-1; i > 2 && i < ListCMD.size(); i++ )
-      {
+      if(bDebug) System.out.println(cmd);
+      try { // open input stream for reading
+         BufferedReader br= new BufferedReader(new InputStreamReader( p.getInputStream()));
+         while( (thisLine = br.readLine()) != null) ListCMD.add(thisLine);
+      } catch(Exception e) { e.printStackTrace(); }
+
+      for( int i=0; i < ListCMD.size(); i++ ) {
         if( ListCMD.get(i).indexOf("esponse") > 0 ) {
-          String strValue= ListCMD.get(4).substring(ListCMD.get(4).indexOf(":") + 1).replaceAll("\\s","");
-          if(bDebug) System.out.println("   Extracted Response: "+strValue);
-          if( strValue.length() > 0 && !strValue.toLowerCase().equals("ffff") )
-          {
-            strRet= strValue;
+          String strValue= ListCMD.get(i).substring(ListCMD.get(i).indexOf(":") + 1).replaceAll("\\s","");
+          if(bDebug) System.out.print("   Extracted Response: '"+strValue); System.out.println("' at line: "+i);
+          if( strValue.length() > 0 && !strValue.toLowerCase().equals("ffff") ) { strRet= strValue; bNoBreak= false; }
+          i= ListCMD.size(); // found the response line, ending search
+        } else {
+          if( ListCMD.size() < 3 ) { strRet= "fffe"; //READ ERROR
             bNoBreak= false;
           }
-        } else {
-          if( ListCMD.size() < 3 ) strRet= "fffe"; //READ ERROR
-            bNoBreak= false;
         }
       }
     }

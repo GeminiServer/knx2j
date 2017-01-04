@@ -35,7 +35,7 @@ _run() {
     mkdir -p /run/knx2j
     chown "$user":"$user" /run/lancom
     #su "$user" -c 'mkdir -p $HOME/.knx2j/'
-    su "$user" -c 'cd /opt/knx2j; java knx2j &> /var/log/knx2j.log & echo $! > '"$pidfile"
+    su "$user" -c 'cd /opt/knx2j; java -jar knx2j.jar &> /var/log/knx2j.log & echo $! > '"$pidfile"
 }
 
 _status() {

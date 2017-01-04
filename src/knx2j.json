@@ -1,7 +1,7 @@
 {
   "general":[{
-    "update-interval": 2,
-    "enable-logging": true
+    "update-interval": 10,
+    "enable-logging": false
   }],
 
   "middleware":[{

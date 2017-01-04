@@ -187,7 +187,7 @@ public class knx2j
       for( int i=0; i < ListCMD.size(); i++ ) {
         if( ListCMD.get(i).indexOf("esponse") > 0 ) {
           String strValue= ListCMD.get(i).substring(ListCMD.get(i).indexOf(":") + 1).replaceAll("\\s","");
-          if(bDebug) System.out.print("   Extracted Response: '"+strValue); System.out.println("' at line: "+i);
+          if(bDebug) { System.out.print("   Extracted Response: '"+strValue); System.out.println("' at line: "+i); }
           if( strValue.length() > 0 && !strValue.toLowerCase().equals("ffff") ) { strRet= strValue; bNoBreak= false; }
           i= ListCMD.size(); // found the response line, ending search
         } else {

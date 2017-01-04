@@ -7,72 +7,99 @@
 //
 //  Name: knx2j
 //  Description:
-//  Version: 0.0.3
+//  Version: 0.0.4
 //
-//  Author: Erkan Colak - 01.02.2014 / 09.05.2015 / 15.12.2016
+//  Author: Erkan Colak
 //
 
 import java.io.*;
 import java.util.*;
 import java.lang.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import javax.xml.bind.DatatypeConverter;
 import java.net.URL;
 import java.net.URLConnection;
 import G3m1n1S3rv3r.*;
+import com.eclipsesource.json.*;
 
 public class knx2j
 {
-  private static int iSleepTime       = 10;    // in minutes. Default 30 minutes
-  private static boolean bDebug       = true;  // default false
-  private static boolean bClassDebug  = true;  // default false
+  private static String strStartString = "Name: knx2j\nVersion: v0.0.4\nAuthor: Erkan Colak";
+  private static String strCfgFile = "knx2j.json";  // default json settings file
 
-  // Middleware/G3m1n1S3v3r class settings
-  private static String strHOST       = "kronos"; //hostname
-  private static String strMiddleWare = "sz/middleware.php/data/";
-  private static String USER_AGENT    = "Mozilla/5.0";
+  private static int iSleepTime           = 10;    // Read and write timer in minutes. Default is 10 minutes
+  private static boolean bDebug           = false; // print all debug-log informations
+  private static boolean bClassDebug      = false; // print all debug-log informations
+  private static String strHOST           = "";    // hostname
+  private static String strMiddleWare     = "";    // url-path to vz middleware
+  private static String USER_AGENT        = "";    // user-agent strint
+  private static String strGRPResponseBIN = "";    // KNX read and response binarie
+  private static String strKNX_IP         = "";    // knx ip of eibd or knxd or of your ip gateway
+  private static String strKNX_PORT       = "";    // knx port
 
+  private static boolean ReadConfig () {
+    boolean bRet=true;
+    FileReader rjson= null;
+    try {
+      rjson = new FileReader(strCfgFile);
+      JsonObject ObjParse= Json.parse(rjson).asObject();
+      if(ObjParse != null) {
+        if( ObjParse.get("general") != null && ObjParse.get("general").asArray() != null && ObjParse.get("general").asArray().get(0).asObject() != null ) {
+          JsonObject objsettings = ObjParse.get("general").asArray().get(0).asObject();
+          iSleepTime  = objsettings.getInt("update-interval", 10);
+          bDebug = bClassDebug = objsettings.getBoolean("enable-logging", true);
 
-  // KNX Settings
-  private static String strGRPResponseBIN= "/usr/bin/groupreadresponse";
-  private static String strKNX_IP   = "localhost";
-  private static String strKNX_PORT = "6720";
+        } else { System.out.println("No 'general' settings defined."); bRet= false; }
+        if( ObjParse.get("middleware") != null && ObjParse.get("middleware").asArray() != null && ObjParse.get("middleware").asArray().get(0).asObject() != null ) {
+          JsonObject objmiddleware = ObjParse.get("middleware").asArray().get(0).asObject();
 
-  private static List<String> KNXSensors= Arrays.asList(
- //"DESCRIPTION"     ,  KNX Group Adress: "0/0/0", type: "thermal" | "humidity", UUID: "00000000-0000-0000-0000-000000000000",
-   "Außen Süden"     , "6/0/0"                   , "thermal"                   , "c8758450-aac3-11e3-ae70-71656855ff53",
-   "Außen Norden"    , "6/0/1"                   , "thermal"                   , "c3407300-9d4b-11e3-8eb8-99224c3b70e8",
-   "Garage"          , "6/0/4"                   , "thermal"                   , "912e60f0-f67f-11e4-a9e6-331b8e5a9090",
-   "Garage DHT"      , "6/1/0"                   , "humidity"                  , "673a3720-f691-11e4-a198-17fbca1892ef",
-   "Gaestezimmer"    , "6/0/5"                   , "thermal"                   , "c09c1090-f67f-11e4-82a4-87bc55045e87",
-   "Gaestezimmer"    , "6/1/1"                   , "humidity"                  , "82784290-f691-11e4-8080-97a60fc9e550",
-   "Buero"           , "6/0/6"                   , "thermal"                   , "d59bd540-f67f-11e4-8edf-abb3094bd0b0",
-   "Buero"           , "6/1/2"                   , "humidity"                  , "a7a3d030-f691-11e4-9a92-f7299691870c",
-   "Wohnzimmer"      , "6/0/7"                   , "thermal"                   , "e9f0ca40-f67f-11e4-9b88-399913118058",
-   "Wohnzimmer"      , "6/1/3"                   , "humidity"                  , "cba1ab60-f691-11e4-90dd-cbb5b479a26f",
-   "Esszimmer"       , "6/0/8"                   , "thermal"                   , "00c8b520-f680-11e4-875c-614b91d0efd1",
-   "Esszimmer"       , "6/1/4"                   , "humidity"                  , "3ca0b220-f692-11e4-90e4-5d261be15ebc",
-   "Kueche"          , "6/0/9"                   , "thermal"                   , "190d48c0-f680-11e4-9769-ef0904de4f35",
-   "Kueche"          , "6/1/5"                   , "humidity"                  , "8b0808f0-f692-11e4-a548-11407954ac7e",
-   "Schlafzimmer"    , "6/0/10"                  , "thermal"                   , "27b9a0b0-f680-11e4-8348-df416d69339c",
-   "Schlafzimmer"    , "6/1/6"                   , "humidity"                  , "125c8b40-f693-11e4-9f4e-4bcb5ce0a511",
-   "Taylan"          , "6/0/11"                  , "thermal"                   , "45677110-f680-11e4-ab93-513bbf1c5ded",
-   "Taylan"          , "6/1/7"                   , "humidity"                  , "217c9510-f693-11e4-81f3-bbac56cd481e",
-   "Helin"           , "6/0/12"                  , "thermal"                   , "55d19df0-f680-11e4-a3b1-9d56ef45b14d",
-   "Helin"           , "6/1/8"                   , "humidity"                  , "2e88bcc0-f693-11e4-af32-a56a796d387f",
-   "Badezimmer"      , "6/0/13"                  , "thermal"                   , "67063430-f680-11e4-a790-3125d777dff2",
-   "Badezimmer"      , "6/1/9"                   , "humidity"                  , "3be37270-f693-11e4-8918-254846c58684",
-   "Studio"          , "6/0/14"                  , "thermal"                   , "7cf3df80-f680-11e4-af30-919eebf2cd30",
-   "Studio"          , "6/1/10"                  , "humidity"                  , "4b0221d0-f693-11e4-adf0-a15873e8fffb",
-   "Geaste Bad"      , "6/0/15"                  , "thermal"                   , "9110eef0-f680-11e4-b064-53d78011f460",
-   "Geaste Bad"      , "6/1/11"                  , "humidity"                  , "6029db90-f693-11e4-8629-5d69f324e739",
-   "Heizungsraum"    , "6/0/16"                  , "thermal"                   , "e53fc6b0-fcd9-11e4-8e0d-675b5eeba782",
-   "Heizungsraum"    , "6/1/12"                  , "humidity"                  , "eb2b9c90-fcd9-11e4-8757-fb0c275f6535",
-   "RM Studio"       , "5/0/10"                  , "thermal"                   , "e0c5f360-639d-11e6-a1fd-a36ae6127815",
-   "RM DG Flur"      , "5/1/10"                  , "thermal"                   , "19349490-639e-11e6-9be0-0dd56ca459d9",
-   "RM Serverraum"   , "5/2/10"                  , "thermal"                   , "404a4a80-639e-11e6-91d2-bdf146ed299c",
-   "RM Garage Hinten", "5/3/10"                  , "thermal"                   , "5c5602e0-639e-11e6-9e5c-e1ef68299554",
-   "RM Garage Vorne" , "5/4/10"                  , "thermal"                   , "7377f360-639e-11e6-84cb-61fb4e788e0f"
-  );
+          strHOST       = objmiddleware.getString("host","kronos");
+          strMiddleWare = objmiddleware.getString("path","sz/middleware.php/data/");
+          USER_AGENT    = objmiddleware.getString("user-agent","Mozilla/5.0");
+
+        } else { System.out.println("No 'middleware' settings defined."); bRet= false; }
+        if( ObjParse.get("knx") != null && ObjParse.get("knx").asArray() != null && ObjParse.get("knx").asArray().get(0).asObject() != null ) {
+          JsonObject objknx = ObjParse.get("knx").asArray().get(0).asObject();
+
+          strGRPResponseBIN = objknx.getString("groupreadresponse","/usr/bin/groupreadresponse");
+          strKNX_IP         = objknx.getString("ip","localhost");
+          strKNX_PORT       = objknx.getString("port","6720");
+
+        } else { System.out.println("No 'knx' settings defined."); bRet= false; }
+      } else bRet= false;
+
+      if(bRet && bDebug){
+       System.out.println("#### Extracted settings");
+       System.out.println("  iSleepTime: "+iSleepTime);
+       System.out.println("  bDebug: "+bDebug);
+       System.out.println("  bClassDebug: "+bClassDebug);
+       System.out.println("  strHOST: "+strHOST);
+       System.out.println("  strMiddleWare: "+strMiddleWare);
+       System.out.println("  USER_AGENT: "+USER_AGENT);
+       System.out.println("  strGRPResponseBIN: "+strGRPResponseBIN);
+       System.out.println("  strKNX_IP: "+strKNX_IP);
+       System.out.println("  strKNX_PORT: "+strKNX_PORT);
+       System.out.println("#### Extracted settings");
+       System.out.println("");
+      }
+    }
+    catch (IOException e) { e.printStackTrace(); }
+    finally { try { if (rjson != null) rjson.close(); } catch (IOException ex) { ex.printStackTrace(); } }
+    return bRet;
+  }
+
+  private static JsonArray ReadSensors () {
+    FileReader rjson= null;
+    JsonArray jRet= null;
+    try {
+      rjson = new FileReader(strCfgFile);
+      jRet= Json.parse(rjson).asObject().get("sensors").asArray();
+    }
+    catch (IOException e) { e.printStackTrace(); }
+    finally { try { if (rjson != null) rjson.close(); } catch (IOException ex) { ex.printStackTrace(); } }
+    return jRet;
+  }
 
   private static int mtomil(int iMinute) { return iMinute*60000; }
 
@@ -164,9 +191,8 @@ public class knx2j
           if( strValue.length() > 0 && !strValue.toLowerCase().equals("ffff") ) { strRet= strValue; bNoBreak= false; }
           i= ListCMD.size(); // found the response line, ending search
         } else {
-          if( ListCMD.size() < 3 ) { strRet= "fffe"; //READ ERROR
-            bNoBreak= false;
-          }
+          strRet= "fffe"; //  read error. sensor is not responsing
+          bNoBreak= false;
         }
       }
     }
@@ -186,28 +212,44 @@ public class knx2j
     return DatatypeConverter.parseHexBinary(s);
   }
 
+
   public static void main( String[] args ) throws IOException, Exception {
-    int iSizeKNXSensors= KNXSensors.size();
-    if( iSizeKNXSensors < 2 ) {
-      System.out.println("No Sensors defines!");
+
+    System.out.println(strStartString);
+    System.out.println("Starting...");
+    System.out.println("");
+
+    System.out.println("Reading knx2j.json settings file...");
+    if( !ReadConfig() ) {
+     System.out.println("Error: Cloud not read all Setting! ");
+     return;
+    }
+
+    JsonArray jKNXSensors = ReadSensors();
+    int iSizeKNXSensors= jKNXSensors.size();
+    if( iSizeKNXSensors < 1 ) {
+      System.out.println("No sensor is defined! Please define sensors in knx2j json.");
       return;
-    } else { System.out.println("Found: "+iSizeKNXSensors/4+" Sensors. Starting now to read and write the values ..."); }
+    } else { System.out.println("Found: "+iSizeKNXSensors+" Sensors. Starting now to read and write the values ..."); }
+
+    //if(true) return;
 
     G3m1n1S3rv3r  gCL= new G3m1n1S3rv3r();
     if( gCL.SetConfig( strHOST, strMiddleWare, USER_AGENT, bClassDebug ) ) {
       boolean bThreadSleep= true;
-      int iReTrySensor= 0;
+      SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss.SS");
 
       while(true)
       {
         int i=0;
         long unixTime = System.currentTimeMillis() / 1000L;
-        for( i= bThreadSleep ? 0 : iReTrySensor ; i < KNXSensors.size(); i=i+4)
+        String strCurTime= sdf.format( new Date( System.currentTimeMillis() ) );
+        for( i= bThreadSleep ? 0 : i; i < iSizeKNXSensors; i++)
         {
-          String strDescription= KNXSensors.get(i);  // Description
-          String strID= KNXSensors.get(i+1);         // GROUP i.e. 6/0/0
-          String strType= KNXSensors.get(i+2);       // Type
-          String strUUID= KNXSensors.get(i+3);       // UUID
+          String strDescription= jKNXSensors.get(i).asObject().getString("description","");
+          String strID         = jKNXSensors.get(i).asObject().getString("groupadress","");
+          String strType       = jKNXSensors.get(i).asObject().getString("type","");
+          String strUUID       = jKNXSensors.get(i).asObject().getString("uuid","");
           boolean bUnitIsThermal=true;
 
           if(bDebug) System.out.print("\n\n\n######## BEGIN Sensor: "+strDescription);
@@ -241,53 +283,45 @@ public class knx2j
               if(bDebug) System.out.println("   Converted Response: "+dRxData);
 
 
-              if(bDebug) System.out.println("## BEGIN - Sending DATA:");
+              if(bDebug) System.out.println("## BEGIN - Sending DATA");
               boolean bSendHttp= gCL.SendTemp( unixTime, strDescription, strID, strUUID, strType, dRxData );
               if(bDebug)
               {
                 String strPrintValue="";
                 strPrintValue= strPrintValue.format("Time:%d ID: %s Description: %s Value: "+dRxData+strDisplayUnit,unixTime,strID,strDescription);
-                System.out.println("          Time: "+unixTime);
-                System.out.println("            ID: "+strID);
+                System.out.println("          Time: "+unixTime+"  ("+strCurTime+")");
+                System.out.println("     Sensor ID: "+strID);
                 System.out.println("   Description: "+strDescription);
-                System.out.println("         Value: "+dRxData+strDisplayUnit);
-                System.out.println("     Counter i: "+i);
-                System.out.println("  iReTrySensor: "+iReTrySensor);
-                System.out.println("  bThreadSleep: "+bThreadSleep);
-                System.out.println("## END - Sending DATA:");
+                System.out.println("  Sensor Value: "+dRxData+strDisplayUnit);
+                System.out.println("      Sensor #: "+i);
+                System.out.println("## END - Sending DATA");
               }
             }
             else
             {
+              if(bDebug) {
+                System.out.println("## BEGIN - ERROR");
+                System.out.println("          Time: "+unixTime+"  ("+strCurTime+")");
+                System.out.println("     Sensor ID: "+strID);
+                System.out.println("   Description: "+strDescription);
+                System.out.println("  Sensor Value: "+strHex);
+                System.out.println("      Sensor #: "+i);
+              }
+
               switch(strHex.toLowerCase())
               {
                 case "ffff": {
-                  if(bDebug) System.out.println("### BEGIN - FFFF: Wrong Value - Try Retry MODE");
-                  iReTrySensor= ( i == 0 ) ? i=0: i-4;
                   bThreadSleep= false; // retry immediately 2 sec. wait
-                  if(bDebug)
-                  {
-                    System.out.println("     Sensor ID: "+strID);
-                    System.out.println("  Sensor Value: "+strHex);
-                    System.out.println("  iReTrySensor: "+iReTrySensor);
-                    System.out.println("  bThreadSleep: "+bThreadSleep);
-                    System.out.println("### END - FFFF: Wrong Value - Try Retry MODE");
-                  }
+                  if(bDebug) System.out.println("     E R R O R: Wrong value received from sensor. Trying to read again! (Entering Retry-Mode)");
                 } break;
                 case "fffe": {
-                  if(bDebug) System.out.println("### BEGIN - FFFE: No Data received. Skip to next");
-                  if(bDebug)
-                  {
-                    System.out.println("     Sensor ID: "+strID);
-                    System.out.println("  Sensor Value: "+strHex);
-                    System.out.println("  iReTrySensor: "+iReTrySensor);
-                    System.out.println("### END - FFFE: No Data received. Skip to next ");
-                  }
+                  if(bDebug) System.out.println("     E R R O R: No data received. Sensor is not responding!?");
                 } break;
                 default:
-                  if(bDebug) System.out.println("# Unknown Return-Code: "+ strHex.toLowerCase());
+                  if(bDebug) System.out.println("     E R R O R: Unknown return code received. Code is:"+ strHex.toLowerCase());
                 break;
               } // switch( ...
+              if(bDebug) System.out.println("## END - ERROR");
             } // else ...
           } //  if( strID ...
           if(bDebug) System.out.println("### END - Read");
@@ -295,7 +329,15 @@ public class knx2j
           if(bDebug) System.out.println(bUnitIsThermal ? " (Sensor case: thermal)" : " (Sensor case: humidity)" );
         } // for( ...
         // Sleep in minutes
-        try { if( bThreadSleep ) Thread.sleep(mtomil(iSleepTime)/*5000*/); else { Thread.sleep(/*Sleep 2 Seconds and try again*/ 3000); } } catch(InterruptedException ex) { Thread.currentThread().interrupt(); }
+        try {
+          if( bThreadSleep ) {
+            if(bDebug) System.out.println("\n\n### Before starting next read & write. Sleeping for: "+iSleepTime+" Minutes.");
+            Thread.sleep(mtomil(iSleepTime)/*5000*/);
+          } else {
+            if(bDebug) System.out.println("\n\n### Starting retry read in 2 Seconds.");
+            Thread.sleep(/*Sleep 2 Seconds and try again*/ 2000);
+          }
+        } catch( InterruptedException ex ) { Thread.currentThread().interrupt(); }
       } // while(true)
     } // gCL.SetConfig
   } //public static void main

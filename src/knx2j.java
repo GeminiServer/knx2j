@@ -7,7 +7,7 @@
 //
 //  Name: knx2j
 //  Description:
-//  Version: 0.0.4
+//  Version: 0.0.5
 //
 //  Author: Erkan Colak
 //
@@ -25,8 +25,8 @@ import com.eclipsesource.json.*;
 
 public class knx2j
 {
-  private static String strStartString = "Name: knx2j\nVersion: v0.0.4\nAuthor: Erkan Colak";
-  private static String strCfgFile = "knx2j.json";  // default json settings file
+  private static String strStartString = "Name: knx2j\nVersion: v0.0.5\nAuthor: Erkan Colak";
+  private static String strCfgFile = "knx2j.json"; // default json settings file
 
   private static int iSleepTime           = 10;    // Read and write timer in minutes. Default is 10 minutes
   private static boolean bDebug           = false; // print all debug-log informations
@@ -187,7 +187,10 @@ public class knx2j
       for( int i=0; i < ListCMD.size(); i++ ) {
         if( ListCMD.get(i).indexOf("esponse") > 0 ) {
           String strValue= ListCMD.get(i).substring(ListCMD.get(i).indexOf(":") + 1).replaceAll("\\s","");
-          if(bDebug) { System.out.print("   Extracted Response: '"+strValue); System.out.println("' at line: "+i); }
+          if(bDebug) {
+            System.out.print("   Extracted Response: '"+strValue);
+            System.out.println("' at line: "+i);
+          }
           if( strValue.length() > 0 && !strValue.toLowerCase().equals("ffff") ) { strRet= strValue; bNoBreak= false; }
           i= ListCMD.size(); // found the response line, ending search
         } else {
@@ -221,7 +224,7 @@ public class knx2j
 
     System.out.println("Reading knx2j.json settings file...");
     if( !ReadConfig() ) {
-     System.out.println("Error: Cloud not read all Setting! ");
+     System.out.println("Error: Cloud not read all settings! ");
      return;
     }
 
@@ -230,9 +233,10 @@ public class knx2j
     if( iSizeKNXSensors < 1 ) {
       System.out.println("No sensor is defined! Please define sensors in knx2j json.");
       return;
-    } else { System.out.println("Found: "+iSizeKNXSensors+" Sensors. Starting now to read and write the values ..."); }
-
-    //if(true) return;
+    } else {
+      System.out.println("Found: "+iSizeKNXSensors+" Sensors.");
+      System.out.println("The values will be read and written every: "+iSleepTime+" minutes.");
+    }
 
     G3m1n1S3rv3r  gCL= new G3m1n1S3rv3r();
     if( gCL.SetConfig( strHOST, strMiddleWare, USER_AGENT, bClassDebug ) ) {

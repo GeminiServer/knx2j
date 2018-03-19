@@ -7,7 +7,7 @@
 //
 //  Name: knx2j
 //  Description:
-//  Version: 0.0.5
+//  Version: 0.0.6
 //
 //  Author: Erkan Colak
 //
@@ -25,7 +25,7 @@ import com.eclipsesource.json.*;
 
 public class knx2j
 {
-  private static String strStartString = "Name: knx2j\nVersion: v0.0.5\nAuthor: Erkan Colak";
+  private static String strStartString = "Name: knx2j\nVersion: v0.0.6\nAuthor: Erkan Colak";
   private static String strCfgFile = "knx2j.json"; // default json settings file
 
   private static int iSleepTime           = 10;    // Read and write timer in minutes. Default is 10 minutes
@@ -35,6 +35,8 @@ public class knx2j
   private static String strMiddleWare     = "";    // url-path to vz middleware
   private static String USER_AGENT        = "";    // user-agent strint
   private static String strGRPResponseBIN = "";    // KNX read and response binarie
+  private static String strGRPResponseMSG = "";    // Message identifier to convert the reponse value after ':'
+  private static String strGRPResponseIDT = "";    // Message identifier to convert the reponse value after ':'
   private static String strKNX_IP         = "";    // knx ip of eibd or knxd or of your ip gateway
   private static String strKNX_PORT       = "";    // knx port
 
@@ -63,6 +65,8 @@ public class knx2j
           JsonObject objknx = ObjParse.get("knx").asArray().get(0).asObject();
 
           strGRPResponseBIN = objknx.getString("groupreadresponse","/usr/bin/groupreadresponse");
+          strGRPResponseMSG = objknx.getString("responsemessage","esponse");
+          strGRPResponseIDT = objknx.getString("responseidentifier",":");
           strKNX_IP         = objknx.getString("ip","localhost");
           strKNX_PORT       = objknx.getString("port","6720");
 
@@ -78,6 +82,8 @@ public class knx2j
        System.out.println("  strMiddleWare: "+strMiddleWare);
        System.out.println("  USER_AGENT: "+USER_AGENT);
        System.out.println("  strGRPResponseBIN: "+strGRPResponseBIN);
+       System.out.println("  strGRPResponseMSG: "+strGRPResponseMSG);
+       System.out.println("  strGRPResponseIDT: "+strGRPResponseIDT);
        System.out.println("  strKNX_IP: "+strKNX_IP);
        System.out.println("  strKNX_PORT: "+strKNX_PORT);
        System.out.println("#### Extracted settings");
@@ -185,11 +191,11 @@ public class knx2j
       } catch(Exception e) { e.printStackTrace(); }
 
       for( int i=0; i < ListCMD.size(); i++ ) {
-        if( ListCMD.get(i).indexOf("esponse") > 0 ) {
-          String strValue= ListCMD.get(i).substring(ListCMD.get(i).indexOf(":") + 1).replaceAll("\\s","");
+        if( ListCMD.get(i).indexOf(strGRPResponseMSG) > 0 ) {
+          String strValue= ListCMD.get(i).substring(ListCMD.get(i).indexOf(strGRPResponseIDT) + 1).replaceAll("\\s","");
           if(bDebug) {
-            System.out.print("   Extracted Response: '"+strValue);
-            System.out.println("' at line: "+i);
+            System.out.println("   Original Response: '"+ListCMD.get(i)+"'");
+            System.out.println("   Extracted Response: '"+strValue+"' at line: "+i);
           }
           if( strValue.length() > 0 && !strValue.toLowerCase().equals("ffff") ) { strRet= strValue; bNoBreak= false; }
           i= ListCMD.size(); // found the response line, ending search

@@ -1,17 +1,22 @@
 {
   "general":[{
     "update-interval": 10,
-    "enable-logging": false
+    "enable-logging": true
   }],
 
   "middleware":[{
      "host": "kronos",
-     "path": "sz/middleware.php/data/",
+     "path": "middleware.php/data/",
      "user-agent": "Mozilla/5.0"
   }],
 
   "knx":[{
-     "groupreadresponse": "/usr/bin/groupreadresponse",
+     "groupreadresponse_old":    "/usr/lib/knxd/groupreadresponse",
+     "groupreadresponse_new":    "/usr/bin/knxtool groupreadresponse",
+     "groupreadresponse_cached": "/usr/bin/knxtool groupcacheread",
+     "groupreadresponse":        "/usr/bin/knxtool groupcachereadsync",
+     "responsemessage":          "rite from",
+     "reponseidentifier":        ":",
      "ip": "localhost",
      "port": "6720"
   }],

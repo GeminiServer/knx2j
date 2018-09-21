@@ -7,7 +7,7 @@
 //
 //  Name: knx2j
 //  Description:
-//  Version: 0.0.6
+//  Version: 0.0.7
 //
 //  Author: Erkan Colak
 //
@@ -25,11 +25,11 @@ import com.eclipsesource.json.*;
 
 public class knx2j
 {
-  private static String strStartString = "Name: knx2j\nVersion: v0.0.6\nAuthor: Erkan Colak";
+  private static String strStartString = "Name: knx2j\nVersion: v0.0.7\nAuthor: Erkan Colak";
   private static String strCfgFile = "knx2j.json"; // default json settings file
 
   private static int iSleepTime           = 10;    // Read and write timer in minutes. Default is 10 minutes
-  private static boolean bDebug           = false; // print all debug-log informations
+  private static boolean bDebug           = true;  // print all debug-log informations
   private static boolean bClassDebug      = false; // print all debug-log informations
   private static String strHOST           = "";    // hostname
   private static String strMiddleWare     = "";    // url-path to vz middleware
@@ -189,19 +189,24 @@ public class knx2j
          BufferedReader br= new BufferedReader(new InputStreamReader( p.getInputStream()));
          while( (thisLine = br.readLine()) != null) ListCMD.add(thisLine);
       } catch(Exception e) { e.printStackTrace(); }
-
-      for( int i=0; i < ListCMD.size(); i++ ) {
-        if( ListCMD.get(i).indexOf(strGRPResponseMSG) > 0 ) {
-          String strValue= ListCMD.get(i).substring(ListCMD.get(i).indexOf(strGRPResponseIDT) + 1).replaceAll("\\s","");
-          if(bDebug) {
-            System.out.println("   Original Response: '"+ListCMD.get(i)+"'");
-            System.out.println("   Extracted Response: '"+strValue+"' at line: "+i);
+      if(bDebug) System.out.println("ListCMD.Size: "+ListCMD.size());
+      if(ListCMD.size() == 0) {
+        bNoBreak= false;
+        strRet= "fffe"; // read error. Sensor is not responding.
+      } else {
+        for( int i=0; i < ListCMD.size(); i++ ) {
+          if( ListCMD.get(i).indexOf(strGRPResponseMSG) > 0 ) {
+            String strValue= ListCMD.get(i).substring(ListCMD.get(i).indexOf(strGRPResponseIDT) + 1).replaceAll("\\s","");
+            if(bDebug) {
+              System.out.println("   Original Response: '"+ListCMD.get(i)+"'");
+              System.out.println("   Extracted Response: '"+strValue+"' at line: "+i);
+            }
+            if( strValue.length() > 0 && !strValue.toLowerCase().equals("ffff") ) { strRet= strValue; bNoBreak= false; }
+            i= ListCMD.size(); // Found the response line, ending search.
+          } else {
+            strRet= "fefe"; //  Read Error. Predefined response message not found. Check ResponseMSG or the Sensor.
+            bNoBreak= false;
           }
-          if( strValue.length() > 0 && !strValue.toLowerCase().equals("ffff") ) { strRet= strValue; bNoBreak= false; }
-          i= ListCMD.size(); // found the response line, ending search
-        } else {
-          strRet= "fffe"; //  read error. sensor is not responsing
-          bNoBreak= false;
         }
       }
     }
@@ -281,8 +286,9 @@ public class knx2j
 
 
             if( strHex.length() >1 &&
-                !strHex.toLowerCase().equals("ffff") && // recieved wrong value
-                !strHex.toLowerCase().equals("fffe") )  // no data received
+                !strHex.toLowerCase().equals("ffff") && // Recieved wrong sensor value
+                !strHex.toLowerCase().equals("fffe") && // No data received. Sensor not responsing
+                !strHex.toLowerCase().equals("fefe") )  // Read Error. Predefined response message not found. Check ResponseMSG or the Sensor.
             {
               if(!bThreadSleep)
               {
@@ -325,7 +331,10 @@ public class knx2j
                   if(bDebug) System.out.println("     E R R O R: Wrong value received from sensor. Trying to read again! (Entering Retry-Mode)");
                 } break;
                 case "fffe": {
-                  if(bDebug) System.out.println("     E R R O R: No data received. Sensor is not responding!?");
+                  if(bDebug) System.out.println("     E R R O R: No data received. Sensor is not responding!");
+                } break;
+                case "fefe": {
+                  if(bDebug) System.out.println("     E R R O R: Read Error. Predefined response message not found. Check ResponseMSG config or the Sensor.");
                 } break;
                 default:
                   if(bDebug) System.out.println("     E R R O R: Unknown return code received. Code is:"+ strHex.toLowerCase());

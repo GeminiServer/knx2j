@@ -14,8 +14,7 @@ Open the knx2j.json file with a editor of your choice and set your settings:
 ```sh
 $ nano knx2j.json
 ```
-<details><summary>knx2j.json - Configuration Description and file example</summary>
-<p>
+### knx2j.json - Configuration Description and file example
   
 | Section | Setting | Description |Value|
 |------ | ------ | ----------- |---|
@@ -64,9 +63,6 @@ Here is a example of the knx2j.json file:
   ]
 }
 ```
-</p>
-</details>
-
 
 After your configurations is set, just start the knx2j:
 ```sh

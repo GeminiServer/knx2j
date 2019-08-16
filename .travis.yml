@@ -1,8 +1,9 @@
 language: java
 
 jdk:
-  - oraclejdk8
-  - openjdk7
+  - oraclejdk9
 
 before_install:
   - cd java
+
+script: src/make.sh

@@ -5,5 +5,8 @@ jdk:
 
 before_install:
 
-before_script: cd src
+before_script: 
+  - cd src
+  - ls
+  
 script: src/make.sh

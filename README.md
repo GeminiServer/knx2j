@@ -14,6 +14,11 @@ Open the knx2j.json file with a editor of your choice and set your settings:
 ```sh
 $ nano knx2j.json
 ```
+
+### Build
+
+Use `./gradlew assemble` to build the project. To copy the JAR and default config to `release`, run `./gradlew release`.
+
 ### knx2j.json - Configuration Description and file example
   
 | Section | Setting | Description |Value|

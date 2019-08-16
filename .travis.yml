@@ -1,11 +1,6 @@
+dist: trusty
 language: java
 
 jdk:
-  - oraclejdk9
-
-before_install:
-
-before_script: 
-  - cd src
-  
-script: ./make.sh
+  - oraclejdk8
+  - openjdk8

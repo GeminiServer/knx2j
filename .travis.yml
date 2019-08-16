@@ -4,6 +4,5 @@ jdk:
   - oraclejdk9
 
 before_install:
-  - cd java
 
 script: src/make.sh

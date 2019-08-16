@@ -6,7 +6,7 @@ jdk:
 before_install:
 
 before_script: 
-  - cd src
+  - cd GeminiServer/knx2j/src
   - ls
   
-script: src/make.sh
+script: make.sh

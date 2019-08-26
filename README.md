@@ -1,7 +1,7 @@
-
 ![Alt Text](https://media.giphy.com/media/dYGkUpZeNgbcVq1rNt/giphy.gif)
 
-# knx2j
+# knx2j 
+### Status: [![Build Status](https://travis-ci.com/GeminiServer/knx2j.svg?branch=master)](https://travis-ci.com/GeminiServer/knx2j)
 
 Knx2j is a native Java command line application. It is designed to read knx Temperature and Humidity values from given groupadresses and writes them to a Database using the [vz middleware]. You need a working java and knx router/gateway installation, including the knxtools to read the groupadress values from the knx bus. Knx2j is also designed to work with the old [eibd]. But I prefer the open source [knxd].
 

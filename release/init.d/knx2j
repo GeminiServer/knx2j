@@ -33,7 +33,7 @@ check_running() {
 
 _run() {
     mkdir -p /run/knx2j
-    chown "$user":"$user" /run/lancom
+    chown "$user":"$user" /run/knx2j
     #su "$user" -c 'mkdir -p $HOME/.knx2j/'
     su "$user" -c 'cd /opt/knx2j; java -jar knx2j.jar &> /var/log/knx2j.log & echo $! > '"$pidfile"
 }
